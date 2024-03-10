@@ -1,4 +1,4 @@
-﻿#PowerShell Form Converter
+#PowerShell Form Converter
 
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
 
@@ -791,7 +791,6 @@ function Convert-Form {
   [boolean] $IsUsedPropertiesResources= $false  # On utilise le fichier de ressources des propriétés du projet
   
   Write-Verbose ($ConvertFormMsgs.BeginAnalyze -F $ProjectPaths.Source)
-
   if ($isLiteral)
   { $Lignes= Get-Content -Literalpath $ProjectPaths.Source -ErrorAction Stop }
   else
@@ -969,7 +968,7 @@ Function $FunctionName {
   $Components.AddRange($Temp.Split("`r`n"))
   Remove-Variable Temp
   
-  
+ 
   Write-Debug "Début de la seconde analyse"
   for ($i=0; $i -le $Components.Count-1 ;$i++)
   {    
@@ -1304,7 +1303,7 @@ Function $FunctionName {
       { 
           #On traite la partie paramètres d'une déclaration 
          $ParametresFont = Select-PropertyFONT $MatchTmp
-         $ligne = ConvertTo-Line $MatchTmp (1,2) $ParametresFont
+         $ligne = ConvertTo-Line $MatchTmp (1,2) $ParametresFont     
          [void]$LinesNewScript.Add($ligne+')')
          continue
       }
@@ -1351,7 +1350,42 @@ Function $FunctionName {
          $Ligne = $Ligne.Replace('System.Drawing.Color.FromArgb','[System.Drawing.Color]::FromArgb')
          [void]$LinesNewScript.Add($Ligne+')')
          continue
-      }                                                                 
+      }   
+  # -------  Procesar llamadas a metodos de ColumnHeader
+  $MatchTmp =[Regex]::Match($Ligne,'^(.*)( = .*System.Windows.Forms.ColumnHeader\()(.*)\)$') 
+  if ($MatchTmp.Success -eq $true)
+  {    
+     $Ligne = $Ligne.Replace('((System.Windows.Forms.ColumnHeader)(New-Object System.Windows.Forms.ColumnHeader()))','New-Object System.Windows.Forms.ColumnHeader') 
+     [void]$LinesNewScript.Add($Ligne)
+     continue
+  }             
+ 
+  # -------  Procesar llamadas a metodos de SizeType
+  $MatchTmp = [Regex]::Match($Ligne,'.*System.Windows.Forms.SizeType.Percent. (.*)\)$')  
+                                    #^(.*)(\.Font =.*System.Drawing.Font\()(.*)\)$ 
+  if ($MatchTmp.Success -eq $true)
+  { 
+    
+  Write-Verbose ($ConvertFormMsgs.MethodMatch -F $MatchTmp) 
+  #Write-Verbose $MatchTmp.Groups[0].value
+  #Write-Verbose $MatchTmp.Groups[1].value
+  #Write-Verbose $MatchTmp.Groups[2].value
+  #Write-Verbose $MatchTmp.Groups[3].value
+  #$Parametres= [Regex]::Split($MatchTmp.Groups[0].value,',')
+  
+  #$Parametres[1]=$Parametres[1] -replace 'F',''
+  #  Write-Verbose $Parametres[1]
+  #  Write-Verbose $Parametres[0]
+
+      #On traite la partie paramètres d'une déclaration 
+    $ParametresSizeType = Select-ParameterSizeType $MatchTmp
+    $ligne = ConvertTo-Line $MatchTmp (2) $ParametresSizeType  
+     #$Ligne = $Ligne.Replace('System.Windows.Forms.SizeType.Percent','[System.Windows.Forms.SizeType]::Percent') 
+  
+     [void]$LinesNewScript.Add($ligne+')')
+     continue
+  }
+                                                               
    # -------  Traite les appels de méthode statique
      #System.Parse("-00:00:01");
      #System.T1.T2.T3.Parse("-00:00:01");
