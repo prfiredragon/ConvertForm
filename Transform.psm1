@@ -1,4 +1,4 @@
-﻿# PowerShell ConvertForm 
+# PowerShell ConvertForm 
 # Transform module
 # Objet   : Regroupe des fonctions de transformation de 
 #           lignes de code CSharp en code PowerShell.
@@ -289,6 +289,29 @@ function Select-ParameterRGB([System.Text.RegularExpressions.Match] $MatchStr)
 	  #un ou plusieurs chiffres suivis par une ou plusieurs parenthèses
   { $Parametres[$i]=$Parametres[$i]  -replace '^(.*)\(([0-9]+)\)+', '$2' }
    
+  return $Parametres
+}
+
+
+function Select-ParameterSizeType([System.Text.RegularExpressions.Match] $MatchStr)
+{ #Analyse une déclaration d'une propriété Font
+   #Pour la chaîne:  $label1.Font = New-Object System.Drawing.Font("Arial Black", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)))
+	# $MatchStr contient 4 groupes :
+	#  0- la ligne compléte
+	#  1- $label1
+	#  2- .Font = New-Object System.Drawing.Font(
+	#  3- "Arial Black", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0))
+
+
+  $Parametres= [Regex]::Split($MatchStr.Groups[0].value,',')
+
+  $Parametres[0]=$Parametres[0] -replace 'System.Windows.Forms.SizeType.Percent','[System.Windows.Forms.SizeType]::Percent'
+  $Parametres[0]=$Parametres[0] -replace 'RowStyles.Add','RowStyles.Add('
+  $Parametres[0]=$Parametres[0] -replace 'ColumnStyles.Add','ColumnStyles.Add('
+  $Parametres[1]=$Parametres[1] -replace 'F',''
+
+
+  
   return $Parametres
 }
 
